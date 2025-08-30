@@ -1,4 +1,4 @@
-package com.example.smartdesk
+package org.asteroid.smartdesk
 
 import io.flutter.embedding.android.FlutterActivity
 
