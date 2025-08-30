@@ -25,10 +25,10 @@ class _PortalPageState extends State<PortalPage> {
           onNavigationRequest: (NavigationRequest request) async {
             final url = request.url;
 
-            // Check if URL looks like a downloadable file
+            // Checking if URL looks like a downloadable file
             if (url.startsWith("blob")) {
               await _downloadAndOpen(url);
-              return NavigationDecision.prevent; // stop webview from navigating
+              return NavigationDecision.prevent;
             }
             return NavigationDecision.navigate;
           },

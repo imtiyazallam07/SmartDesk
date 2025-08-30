@@ -16,7 +16,7 @@ class _NoticeListState extends State<NoticeList> {
   @override
   void initState() {
     super.initState();
-    _noticeData = getData(); // load when widget starts
+    _noticeData = getData();
   }
 
   Future<void> _launchUrl(String link) async {

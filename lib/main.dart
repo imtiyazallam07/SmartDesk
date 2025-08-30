@@ -30,12 +30,12 @@ class SmartDesk extends StatefulWidget {
 
 class _SmartDeskState extends State<SmartDesk> {
   int _selectedIndex = 0;
-  late Future<List<Widget>> _noticeData; // 👈 future for the list
+  late Future<List<Widget>> _noticeData;
 
   @override
   void initState() {
     super.initState();
-    _noticeData = getData(); // 👈 load data immediately when app starts
+    _noticeData = getData();
   }
 
   void _onItemTapped(int index) {
@@ -87,7 +87,7 @@ class _SmartDeskState extends State<SmartDesk> {
                   Expanded(
                     child: Column(
                       crossAxisAlignment:
-                          CrossAxisAlignment.start, // 👈 aligns text left
+                          CrossAxisAlignment.start,
                       children: [
                         Text(
                           date[i].text.trim(),
