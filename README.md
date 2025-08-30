@@ -1,4 +1,10 @@
-# SmartDesk  
+<p align="center">
+  <img src="assets/logo.png" alt="Logo" width="140" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle; font-size: 60px; font-weight: 600">
+    SmartDesk
+  </span>
+</p>
+
 
 SmartDesk is a Flutter-based mobile application designed to simplify access to important student resources at **ITER (SOA University)**.  
 It collects notices, events, holidays, and curriculum information, and displays them in a clean, material-themed user interface.  
@@ -46,3 +52,4 @@ It collects notices, events, holidays, and curriculum information, and displays 
    ```bash
    git clone https://github.com/imtiyazallam07/smartdesk.git
    cd smartdesk
+   ```
