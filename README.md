@@ -1,8 +1,6 @@
 <p align="center">
   <img src="assets/logo.png" alt="Logo" width="140" style="vertical-align: middle;"/>
-  <span style="vertical-align: middle; font-size: 60px; font-weight: 600">
-    SmartDesk
-  </span>
+  <span style="vertical-align: middle;"><font size="30" style="vertical-align: middle;">SmartDesk</font></span>
 </p>
 
 
