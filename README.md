@@ -8,6 +8,10 @@ It collects notices, events, holidays, and curriculum information, and displays 
 
 ---
 
+<p align="center">
+  <a href="https://github.com/imtiyazallam07/SmartDesk/releases/download/v0.4.1/SmartDesk-v0.4.1.apk"><img src = "screenshots/Download_Android_APK_Badge.webp" width=200></a>
+<p>
+
 ## ✨ Features  
 
 - **Notices & Events**  
@@ -50,3 +54,5 @@ It collects notices, events, holidays, and curriculum information, and displays 
    git clone https://github.com/imtiyazallam07/smartdesk.git
    cd smartdesk
    ```
+
+
