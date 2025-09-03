@@ -39,6 +39,7 @@ dependencies:
   open_file: ^3.3.2
   flutter_native_splash: ^2.4.0
   flutter_launcher_icons: ^0.13.1
+  fluttertoast: ^8.2.12
 
 dev_dependencies:
   flutter_test:

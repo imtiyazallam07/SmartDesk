@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+
 
 class NoticeList extends StatefulWidget {
   const NoticeList({Key? key}) : super(key: key);
@@ -19,8 +21,29 @@ class _NoticeListState extends State<NoticeList> {
     _noticeData = getData();
   }
 
+  Future<void> loadAndOpen(String link) async {
+    final url = Uri.parse("https://www.soa.ac.in$link");
+    var response = await http.get(url);
+    print(response.statusCode);
+    if (response.statusCode == 200) {
+      var document = parser.parse(response.body);
+      var link2 = document.querySelectorAll('article > div > div > div > div > div > div > div > div > div > a');
+      print(link2);
+      var x = link2[0].attributes['href'];
+      _launchUrl(link2[0].attributes['href'] ?? link);
+    } else {
+        Fluttertoast.showToast(
+          msg: "Unable to connect to http://soa.ac.in",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.black12,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+    }
+  }
+
   Future<void> _launchUrl(String link) async {
-    link = "https://www.soa.ac.in$link";
     final Uri _url = Uri.parse(link);
     if (!await launchUrl(_url, mode: LaunchMode.externalApplication)) {
       throw Exception('Could not launch $_url');
@@ -78,7 +101,8 @@ class _NoticeListState extends State<NoticeList> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      _launchUrl(link.attributes['href'] ?? "");
+                      print(link.attributes['href']);
+                      loadAndOpen(link.attributes['href'] ?? "");
                     },
                     child: const Text("View"),
                   ),
