@@ -9,7 +9,8 @@ It collects notices, events, holidays, and curriculum information, and displays 
 ---
 
 <p align="center">
-  <a href="https://github.com/imtiyazallam07/SmartDesk/releases/download/v0.4.1/SmartDesk-v0.4.1.apk"><img src = "screenshots/Download_Android_APK_Badge.webp" width=200></a>
+  <a href="https://github.com/imtiyazallam07/SmartDesk/releases/download/v1.0.0/SmartDesk-v1.0.0.apk"><img src = "screenshots/Download_Android_APK_Badge.webp" width=200></a>
+  <a href="https://github.com/imtiyazallam07/SmartDesk/releases/download/v1.0.0/SmartDesk-installer.exe"><img src = "screenshots/download_windows.png" width=200></a>
 <p>
 
 ## ✨ Features  
@@ -26,15 +27,13 @@ It collects notices, events, holidays, and curriculum information, and displays 
   - Complete list of SOA holidays with date and weekday.  
   - Tabular format for clarity.  
 
-- **Portal Integration**  
-  - Built-in access to the official SOA portal via WebView.  
-  - No need to switch between external browsers.  
+- **Academic Calendar**
+  - Shows year wise academic calendar
 
 ---
 
 ## 📸 Screenshots  
 <img src="screenshots/notices.jpg" width="250" />  
-<img src="screenshots/portal.jpg" width="250" /> 
 <img src="screenshots/holidays.jpg" width="250" />    
 <img src="screenshots/curriculum.jpg" width="250" /> 
 
