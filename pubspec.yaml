@@ -98,8 +98,12 @@ flutter:
     - assets/offline.png
 
 flutter_launcher_icons:
-  android: true
   image_path: "assets/logo.png"
+  android: true
+  windows:
+    generate: true
+    # Optional: Specify size for Windows icon (default is 48)
+    icon_size: 48
 
 flutter_native_splash:
   color: "#ffffff"
