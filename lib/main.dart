@@ -1,12 +1,12 @@
-
 import 'package:flutter/material.dart';
 import "package:http/http.dart" as http;
 import 'package:html/parser.dart' as parser;
 import 'package:url_launcher/url_launcher.dart';
 import 'curriculum.dart';
-import 'portal_page.dart';
-import 'holiday_list.dart';
+import 'about.dart';
+import 'Calendar.dart';
 import 'notice_event.dart';
+
 void main() {
   runApp(MyApp());
 }
@@ -73,7 +73,7 @@ class _SmartDeskState extends State<SmartDesk> {
               margin: EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black12,
@@ -86,8 +86,7 @@ class _SmartDeskState extends State<SmartDesk> {
                 children: [
                   Expanded(
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           date[i].text.trim(),
@@ -127,13 +126,42 @@ class _SmartDeskState extends State<SmartDesk> {
   Widget build(BuildContext context) {
     final List<Widget> pages = <Widget>[
       NoticeList(),
-      PortalPage(),
-      HolidayTable(),
-      Curriculum(),
+      Calendar(),
+      CurriculumPage(jsonUrl: "https://raw.githubusercontent.com/imtiyaz-allam/SmartDesk-backend/refs/heads/main/curriculum.json"),
     ];
 
     return Scaffold(
-      appBar: AppBar(title: Text("SmartDesk")),
+      appBar: AppBar(title: Text("SmartDesk"), actions: [
+        IconButton(
+          icon: const Icon(
+            Icons.info,
+            color: Colors.blue,
+            size: 28,
+          ),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AboutScreen()
+              ),
+            );
+          },
+        ),
+        IconButton(
+          icon: const Icon(
+            Icons.computer_rounded,
+            color: Colors.blue,
+            size: 28,
+          ),
+          onPressed: () async {
+            final Uri _url =
+                Uri.parse("https://soaportals.com/StudentPortalSOA/#/");
+            if (!await launchUrl(_url, mode: LaunchMode.externalApplication)) {
+              throw Exception('Could not launch $_url');
+            }
+          },
+        ),
+      ]),
       body: pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
@@ -142,12 +170,8 @@ class _SmartDeskState extends State<SmartDesk> {
             label: 'Notice and Event',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.desktop_windows_outlined),
-            label: 'Portal',
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.calendar_month_outlined),
-            label: 'Holiday',
+            label: 'Calender',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.book_outlined),
@@ -162,6 +186,3 @@ class _SmartDeskState extends State<SmartDesk> {
     );
   }
 }
-
-
-

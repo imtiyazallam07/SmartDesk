@@ -5,14 +5,10 @@
 import FlutterMacOS
 import Foundation
 
-import open_file_mac
-import path_provider_foundation
+import connectivity_plus
 import url_launcher_macos
-import webview_flutter_wkwebview
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
-  OpenFilePlugin.register(with: registry.registrar(forPlugin: "OpenFilePlugin"))
-  PathProviderPlugin.register(with: registry.registrar(forPlugin: "PathProviderPlugin"))
+  ConnectivityPlusPlugin.register(with: registry.registrar(forPlugin: "ConnectivityPlusPlugin"))
   UrlLauncherPlugin.register(with: registry.registrar(forPlugin: "UrlLauncherPlugin"))
-  WebViewFlutterPlugin.register(with: registry.registrar(forPlugin: "WebViewFlutterPlugin"))
 }
