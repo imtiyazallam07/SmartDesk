@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'AcademicCalendarPage.dart';
 
@@ -14,16 +15,14 @@ class Calendar extends StatefulWidget {
 }
 
 class _CalendarState extends State<Calendar> {
-  // Initialize with a Future that completes immediately with an empty list.
-  // This avoids the LateInitializationError on the very first build.
   late Future<List<dynamic>> _holidayFuture = Future.value([]);
   bool offline = false;
+
+  static const String cacheKey = "holiday_cache_v1";
 
   @override
   void initState() {
     super.initState();
-    // Start checking internet connectivity immediately.
-    // This handles the initial fetch or sets the offline flag.
     _checkInternet(isInitialLoad: true);
   }
 
@@ -33,37 +32,58 @@ class _CalendarState extends State<Calendar> {
     if (connectivity == ConnectivityResult.none) {
       setState(() {
         offline = true;
-        // If initial load and offline, assign a failed Future
+
         if (isInitialLoad) {
-          _holidayFuture = Future.error('Offline');
+          _holidayFuture = _loadFromCacheOrError();
         }
       });
     } else {
-      // If we are online, we proceed to fetch data
       setState(() {
         offline = false;
-        // Ensure we only try to fetch if we are online
         _holidayFuture = fetchHolidays();
       });
     }
   }
 
+  /// ----------------------------------------------------------
+  /// Loading from cache
+  /// ----------------------------------------------------------
+  Future<List<dynamic>> _loadFromCacheOrError() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    if (prefs.containsKey(cacheKey)) {
+      final cachedJson = prefs.getString(cacheKey)!;
+      return jsonDecode(cachedJson);
+    } else {
+      return Future.error("Offline");
+    }
+  }
+
+  /// ----------------------------------------------------------
+  /// Fetch + Cache Logic
+  /// ----------------------------------------------------------
   Future<List<dynamic>> fetchHolidays() async {
     const url =
         "https://raw.githubusercontent.com/imtiyaz-allam/SmartDesk-backend/refs/heads/main/holidays.json";
 
-    final response = await http.get(Uri.parse(url));
+    try {
+      final response = await http.get(Uri.parse(url));
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      // Throw an exception so FutureBuilder catches it and displays the error/placeholder.
-      throw Exception("Holiday JSON Load Failed: ${response.statusCode}");
+      if (response.statusCode == 200) {
+        final prefs = await SharedPreferences.getInstance();
+        prefs.setString(cacheKey, response.body); // Save to cache
+
+        return jsonDecode(response.body);
+      } else {
+        return _loadFromCacheOrError();
+      }
+    } catch (_) {
+      // If network fails, load from cache
+      return _loadFromCacheOrError();
     }
   }
 
   Future<void> _refreshPage() async {
-    // When refreshing, check internet and re-fetch if online
     await _checkInternet();
   }
 
@@ -78,22 +98,16 @@ class _CalendarState extends State<Calendar> {
         child: FutureBuilder<List<dynamic>>(
           future: _holidayFuture,
           builder: (context, snapshot) {
-            // 1. Initial State / Waiting for Future
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              // Show a loading indicator if the Future is truly waiting
-              if (!offline && snapshot.data == null) {
-                return const Center(child: CircularProgressIndicator());
-              }
+            if (snapshot.connectionState == ConnectionState.waiting &&
+                !offline &&
+                snapshot.data == null) {
+              return const Center(child: CircularProgressIndicator());
             }
 
-            // 2. Error State / Offline
             if (snapshot.hasError || offline) {
-              // The exception 'Offline' is thrown in initState() if no internet.
-              // We also use 'offline' flag as a direct check.
               return _buildOfflinePlaceholder();
             }
 
-            // 3. Success State
             final holidays = snapshot.data!;
             return _buildHolidayTable(holidays);
           },
@@ -102,9 +116,6 @@ class _CalendarState extends State<Calendar> {
     );
   }
 
-  /// -------------------------------------------------------------
-  /// OFFLINE PLACEHOLDER (scrollable so pull-to-refresh still works)
-  /// -------------------------------------------------------------
   Widget _buildOfflinePlaceholder() {
     return ListView(
       padding: const EdgeInsets.only(top: 80),
@@ -112,8 +123,6 @@ class _CalendarState extends State<Calendar> {
         Center(
           child: Column(
             children: [
-              // Ensure this asset path is correct:
-              // For robustness, you might want to use a standard Icon instead if the image fails.
               Image.asset("assets/offline.png", width: 180),
               const SizedBox(height: 16),
               const Text("No Internet Connection",
@@ -128,11 +137,7 @@ class _CalendarState extends State<Calendar> {
     );
   }
 
-  /// -------------------------------------------------------------
-  /// HOLIDAY TABLE VIEW (Rest of the methods remain the same)
-  /// -------------------------------------------------------------
   Widget _buildHolidayTable(List<dynamic> holidays) {
-    // ... (Your existing _buildHolidayTable implementation)
     return SingleChildScrollView(
       padding: const EdgeInsets.all(8),
       child: Column(
@@ -146,7 +151,6 @@ class _CalendarState extends State<Calendar> {
               3: FlexColumnWidth(2),
             },
             children: [
-              // HEADER
               TableRow(
                 decoration: BoxDecoration(color: Colors.grey.shade300),
                 children: const [
@@ -172,8 +176,6 @@ class _CalendarState extends State<Calendar> {
                   ),
                 ],
               ),
-
-              // ROWS
               ...holidays.map(
                     (holiday) => TableRow(
                   children: [
@@ -183,8 +185,7 @@ class _CalendarState extends State<Calendar> {
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8),
-                      child: Text(holiday["name"] ?? "",
-                          softWrap: true), // word wrap
+                      child: Text(holiday["name"] ?? "", softWrap: true),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8),
@@ -202,15 +203,11 @@ class _CalendarState extends State<Calendar> {
 
           const SizedBox(height: 20),
 
-          /// --------------------------
-          /// Academic Calendar Buttons
-          /// --------------------------
           const Align(
             alignment: Alignment.centerLeft,
             child: Padding(
               padding: EdgeInsets.all(8.0),
-              child: Text("Academic Calendar",
-                  style: TextStyle(fontSize: 24)),
+              child: Text("Academic Calendar", style: TextStyle(fontSize: 24)),
             ),
           ),
 
@@ -239,7 +236,6 @@ class _CalendarState extends State<Calendar> {
     );
   }
 
-  /// Reusable Year Button
   Widget _buildYearButton(String text, String url) {
     return Expanded(
       child: Padding(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CurriculumPage extends StatefulWidget {
   final String jsonUrl;
@@ -20,36 +21,100 @@ class _CurriculumPageState extends State<CurriculumPage> {
   Map<String, dynamic>? data;
   bool offline = false;
 
+  /// Unique cache key so that different years do not conflict
+  late final String cacheKey;
+
   @override
   void initState() {
     super.initState();
+    cacheKey = "curriculum_${widget.jsonUrl.hashCode}";
     loadData();
   }
 
+  // -------------------------------------------------------------
+  // Load cached JSON
+  // -------------------------------------------------------------
+  Future<Map<String, dynamic>?> loadCachedData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(cacheKey);
+    if (raw == null) return null;
+
+    return jsonDecode(raw);
+  }
+
+  // -------------------------------------------------------------
+  // Save JSON to cache
+  // -------------------------------------------------------------
+  Future<void> saveCachedData(Map<String, dynamic> json) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(cacheKey, jsonEncode(json));
+  }
+
+  // -------------------------------------------------------------
+  // Load from Internet → Cache → Fallback to Cache
+  // -------------------------------------------------------------
   Future<void> loadData() async {
     final conn = await Connectivity().checkConnectivity();
 
     if (conn == ConnectivityResult.none) {
-      setState(() => offline = true);
+      // -------- OFFLINE --------
+      final cached = await loadCachedData();
+      if (cached != null) {
+        setState(() {
+          data = cached;
+          offline = true;
+        });
+      } else {
+        setState(() {
+          data = null;
+          offline = true;
+        });
+      }
       return;
     }
 
+    // -------- ONLINE --------
     try {
       final response = await http.get(Uri.parse(widget.jsonUrl));
 
       if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+
+        await saveCachedData(json); // Cache the latest curriculum
+
         setState(() {
-          data = jsonDecode(response.body);
+          data = json;
           offline = false;
+        });
+      } else {
+        // If server responds but fails → load cached
+        final cached = await loadCachedData();
+        if (cached != null) {
+          setState(() {
+            data = cached;
+            offline = true;
+          });
+        } else {
+          setState(() => offline = true);
+        }
+      }
+    } catch (e) {
+      // ---- NETWORK ERROR → fallback to cache ----
+      final cached = await loadCachedData();
+      if (cached != null) {
+        setState(() {
+          data = cached;
+          offline = true;
         });
       } else {
         setState(() => offline = true);
       }
-    } catch (e) {
-      setState(() => offline = true);
     }
   }
 
+  // -------------------------------------------------------------
+  // Open External Link
+  // -------------------------------------------------------------
   Future<void> _launchURL(String url) async {
     final uri = Uri.parse(url);
 
@@ -58,6 +123,9 @@ class _CurriculumPageState extends State<CurriculumPage> {
     }
   }
 
+  // -------------------------------------------------------------
+  // Tile Builder
+  // -------------------------------------------------------------
   Widget buildTile(String title, List list) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -88,6 +156,9 @@ class _CurriculumPageState extends State<CurriculumPage> {
     );
   }
 
+  // -------------------------------------------------------------
+  // UI
+  // -------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -97,13 +168,26 @@ class _CurriculumPageState extends State<CurriculumPage> {
       ),
 
       body: RefreshIndicator(
-        onRefresh: loadData,
+        onRefresh: loadData, // Slide-down reload is already enabled
 
-        child: offline
+        child: offline && data == null
             ? Center(
-          child: Image.asset(
-            "assets/offline.png",
-            width: 180,
+          child: Column(
+            children: [
+              const SizedBox(height: 80),
+              Image.asset("assets/offline.png", width: 180),
+              const SizedBox(height: 20),
+              const Text(
+                "No Internet Connection",
+                style:
+                TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                "Pull down to retry",
+                style: TextStyle(fontSize: 14),
+              ),
+            ],
           ),
         )
             : data == null
@@ -112,20 +196,25 @@ class _CurriculumPageState extends State<CurriculumPage> {
           padding: const EdgeInsets.only(bottom: 20),
           children: [
             if (data!.containsKey("btech2020"))
-              buildTile("B.Tech Admission Batch 2020",
-                  data!["btech2020"]),
+              buildTile(
+                  "B.Tech Admission Batch 2020", data!["btech2020"]),
+
             if (data!.containsKey("btech2021"))
-              buildTile("B.Tech Admission Batch 2021",
-                  data!["btech2021"]),
+              buildTile(
+                  "B.Tech Admission Batch 2021", data!["btech2021"]),
+
             if (data!.containsKey("btech2022"))
-              buildTile("B.Tech Admission Batch 2022",
-                  data!["btech2022"]),
+              buildTile(
+                  "B.Tech Admission Batch 2022", data!["btech2022"]),
+
             if (data!.containsKey("btech2023"))
-              buildTile("B.Tech Admission Batch 2023",
-                  data!["btech2023"]),
+              buildTile(
+                  "B.Tech Admission Batch 2023", data!["btech2023"]),
+
             if (data!.containsKey("btech2024"))
-              buildTile("B.Tech Admission Batch 2024",
-                  data!["btech2024"]),
+              buildTile(
+                  "B.Tech Admission Batch 2024", data!["btech2024"]),
+
             if (data!.containsKey("mca"))
               buildTile("MCA", data!["mca"]),
           ],

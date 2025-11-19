@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AcademicCalendarPage extends StatefulWidget {
   final String title;
@@ -14,34 +15,65 @@ class AcademicCalendarPage extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _AcademicCalendarPageState createState() => _AcademicCalendarPageState();
+  State<AcademicCalendarPage> createState() => _AcademicCalendarPageState();
 }
 
 class _AcademicCalendarPageState extends State<AcademicCalendarPage> {
-  // FIX: Initialize the late field to an empty/completed Future.
   late Future<List<dynamic>> _calendarFuture = Future.value([]);
+
   bool offline = false;
+
+  /// UNIQUE cache key per year → very important
+  late final String cacheKey;
 
   @override
   void initState() {
     super.initState();
-    // Pass a flag to indicate this is the initial load.
+
+    // Create unique cache key per URL (safe for each academic year)
+    cacheKey = "academic_calendar_${widget.url.hashCode}";
+
     _checkConnection(isInitialLoad: true);
   }
 
+  // -------------------------------------------------------------
+  // LOAD FROM CACHE
+  // -------------------------------------------------------------
+  Future<List<dynamic>?> loadCachedCalendar() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(cacheKey);
+    if (raw == null) return null;
+    return jsonDecode(raw);
+  }
+
+  // -------------------------------------------------------------
+  // SAVE TO CACHE
+  // -------------------------------------------------------------
+  Future<void> saveCachedCalendar(List<dynamic> data) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(cacheKey, jsonEncode(data));
+  }
+
+  // -------------------------------------------------------------
+  // CHECK INTERNET
+  // -------------------------------------------------------------
   Future<void> _checkConnection({bool isInitialLoad = false}) async {
     final connectivity = await Connectivity().checkConnectivity();
 
     if (connectivity == ConnectivityResult.none) {
+      // --- OFFLINE ---
       setState(() {
         offline = true;
-        // If it's the initial load and we're offline, assign a failing Future
-        // so the FutureBuilder knows to jump to snapshot.hasError.
         if (isInitialLoad) {
-          _calendarFuture = Future.error('Offline');
+          _calendarFuture = loadCachedCalendar().then((cached) {
+            if (cached != null) return cached;
+            throw Exception("Offline. No cached data.");
+          });
         }
       });
+
     } else {
+      // --- ONLINE ---
       setState(() {
         offline = false;
         _calendarFuture = fetchCalendarData();
@@ -49,21 +81,39 @@ class _AcademicCalendarPageState extends State<AcademicCalendarPage> {
     }
   }
 
+  // -------------------------------------------------------------
+  // REFRESH / PULL TO REFRESH
+  // -------------------------------------------------------------
   Future<void> _refreshPage() async {
-    // Just call _checkConnection; it will re-fetch if online.
     await _checkConnection();
   }
 
+  // -------------------------------------------------------------
+  // FETCH + CACHE + OFFLINE FALLBACK
+  // -------------------------------------------------------------
   Future<List<dynamic>> fetchCalendarData() async {
-    final response = await http.get(Uri.parse(widget.url));
+    try {
+      final response = await http.get(Uri.parse(widget.url));
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception("Failed to load academic calendar");
+      if (response.statusCode == 200) {
+        final jsonList = jsonDecode(response.body);
+        await saveCachedCalendar(jsonList);   // Cache it
+        return jsonList;
+      } else {
+        throw Exception();
+      }
+    } catch (e) {
+      // On error → load cached version
+      final cached = await loadCachedCalendar();
+      if (cached != null) return cached;
+
+      throw Exception("Failed to load data & no cache available");
     }
   }
 
+  // -------------------------------------------------------------
+  // BUILD UI
+  // -------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -77,17 +127,18 @@ class _AcademicCalendarPageState extends State<AcademicCalendarPage> {
         child: FutureBuilder<List<dynamic>>(
           future: _calendarFuture,
           builder: (context, snapshot) {
-            // Check for explicit offline state first, or if Future failed (due to network error or 'Offline' error)
-            if (offline || snapshot.hasError) {
+            if (offline && snapshot.hasError) {
               return _buildOfflinePlaceholder();
             }
 
-            // Show loading only when a true fetch is happening and no data is present
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            // Data successfully loaded
+            if (snapshot.hasError) {
+              return _buildOfflinePlaceholder();
+            }
+
             return _buildCalendarTable(snapshot.data!);
           },
         ),
@@ -95,16 +146,15 @@ class _AcademicCalendarPageState extends State<AcademicCalendarPage> {
     );
   }
 
-  /// ----------------------------------------
-  /// Offline Placeholder (scrollable for refresh)
-  /// ----------------------------------------
+  // -------------------------------------------------------------
+  // OFFLINE PLACEHOLDER
+  // -------------------------------------------------------------
   Widget _buildOfflinePlaceholder() {
     return ListView(
       padding: const EdgeInsets.only(top: 60),
       children: [
         Column(
           children: [
-            // Ensure this asset exists in your pubspec.yaml and assets folder
             Image.asset("assets/offline.png", width: 180),
             const SizedBox(height: 20),
             const Text(
@@ -122,9 +172,9 @@ class _AcademicCalendarPageState extends State<AcademicCalendarPage> {
     );
   }
 
-  /// ----------------------------------------
-  /// Tabulated View (Word Wrap + Scroll)
-  /// ----------------------------------------
+  // -------------------------------------------------------------
+  // TABLE UI
+  // -------------------------------------------------------------
   Widget _buildCalendarTable(List<dynamic> data) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -137,7 +187,6 @@ class _AcademicCalendarPageState extends State<AcademicCalendarPage> {
             1: FlexColumnWidth(2.5),
           },
           children: [
-            // TABLE HEADER
             TableRow(
               decoration: BoxDecoration(color: Colors.blue.shade50),
               children: const [
@@ -158,7 +207,6 @@ class _AcademicCalendarPageState extends State<AcademicCalendarPage> {
               ],
             ),
 
-            // TABLE DATA ROWS
             for (var item in data)
               TableRow(
                 children: [
@@ -174,7 +222,7 @@ class _AcademicCalendarPageState extends State<AcademicCalendarPage> {
                     padding: const EdgeInsets.all(10),
                     child: Text(
                       item["event"] ?? "",
-                      softWrap: true, // 🔥 WORD WRAP ENABLED
+                      softWrap: true,
                       style: const TextStyle(fontSize: 15),
                     ),
                   ),
