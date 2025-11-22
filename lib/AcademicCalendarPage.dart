@@ -22,17 +22,12 @@ class _AcademicCalendarPageState extends State<AcademicCalendarPage> {
   late Future<List<dynamic>> _calendarFuture = Future.value([]);
 
   bool offline = false;
-
-  /// UNIQUE cache key per year → very important
   late final String cacheKey;
 
   @override
   void initState() {
     super.initState();
-
-    // Create unique cache key per URL (safe for each academic year)
     cacheKey = "academic_calendar_${widget.url.hashCode}";
-
     _checkConnection(isInitialLoad: true);
   }
 
@@ -61,7 +56,6 @@ class _AcademicCalendarPageState extends State<AcademicCalendarPage> {
     final connectivity = await Connectivity().checkConnectivity();
 
     if (connectivity == ConnectivityResult.none) {
-      // --- OFFLINE ---
       setState(() {
         offline = true;
         if (isInitialLoad) {
@@ -73,7 +67,6 @@ class _AcademicCalendarPageState extends State<AcademicCalendarPage> {
       });
 
     } else {
-      // --- ONLINE ---
       setState(() {
         offline = false;
         _calendarFuture = fetchCalendarData();
@@ -97,13 +90,12 @@ class _AcademicCalendarPageState extends State<AcademicCalendarPage> {
 
       if (response.statusCode == 200) {
         final jsonList = jsonDecode(response.body);
-        await saveCachedCalendar(jsonList);   // Cache it
+        await saveCachedCalendar(jsonList);
         return jsonList;
       } else {
         throw Exception();
       }
     } catch (e) {
-      // On error → load cached version
       final cached = await loadCachedCalendar();
       if (cached != null) return cached;
 

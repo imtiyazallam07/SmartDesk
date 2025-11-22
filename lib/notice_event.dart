@@ -123,14 +123,11 @@ class _NoticeListState extends State<NoticeList> {
             });
           }
         }
-
-        // Save cache
         await saveCachedData(scrapedList);
       } else {
         throw Exception("Internet error");
       }
     } catch (e) {
-      // LOAD CACHED DATA IF INTERNET FAILS
       var cached = await loadCachedData();
       if (cached != null) {
         scrapedList = List<Map<String, String>>.from(
@@ -140,7 +137,6 @@ class _NoticeListState extends State<NoticeList> {
       }
     }
 
-    // BUILD UI WIDGETS
     for (var item in scrapedList) {
       data.add(
         Container(

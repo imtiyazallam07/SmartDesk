@@ -20,8 +20,6 @@ class CurriculumPage extends StatefulWidget {
 class _CurriculumPageState extends State<CurriculumPage> {
   Map<String, dynamic>? data;
   bool offline = false;
-
-  /// Unique cache key so that different years do not conflict
   late final String cacheKey;
 
   @override
@@ -57,7 +55,6 @@ class _CurriculumPageState extends State<CurriculumPage> {
     final conn = await Connectivity().checkConnectivity();
 
     if (conn == ConnectivityResult.none) {
-      // -------- OFFLINE --------
       final cached = await loadCachedData();
       if (cached != null) {
         setState(() {
@@ -72,22 +69,19 @@ class _CurriculumPageState extends State<CurriculumPage> {
       }
       return;
     }
-
-    // -------- ONLINE --------
     try {
       final response = await http.get(Uri.parse(widget.jsonUrl));
 
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
 
-        await saveCachedData(json); // Cache the latest curriculum
+        await saveCachedData(json);
 
         setState(() {
           data = json;
           offline = false;
         });
       } else {
-        // If server responds but fails → load cached
         final cached = await loadCachedData();
         if (cached != null) {
           setState(() {
@@ -99,7 +93,6 @@ class _CurriculumPageState extends State<CurriculumPage> {
         }
       }
     } catch (e) {
-      // ---- NETWORK ERROR → fallback to cache ----
       final cached = await loadCachedData();
       if (cached != null) {
         setState(() {
@@ -168,7 +161,7 @@ class _CurriculumPageState extends State<CurriculumPage> {
       ),
 
       body: RefreshIndicator(
-        onRefresh: loadData, // Slide-down reload is already enabled
+        onRefresh: loadData,
 
         child: offline && data == null
             ? Center(
@@ -213,7 +206,7 @@ class _CurriculumPageState extends State<CurriculumPage> {
 
             if (data!.containsKey("btech2024"))
               buildTile(
-                  "B.Tech Admission Batch 2024", data!["btech2024"]),
+                  "B.Tech Admission Batch 2024, 2025 and 2026", data!["btech2024"]),
 
             if (data!.containsKey("mca"))
               buildTile("MCA", data!["mca"]),

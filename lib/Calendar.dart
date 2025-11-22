@@ -71,14 +71,13 @@ class _CalendarState extends State<Calendar> {
 
       if (response.statusCode == 200) {
         final prefs = await SharedPreferences.getInstance();
-        prefs.setString(cacheKey, response.body); // Save to cache
+        prefs.setString(cacheKey, response.body);
 
         return jsonDecode(response.body);
       } else {
         return _loadFromCacheOrError();
       }
     } catch (_) {
-      // If network fails, load from cache
       return _loadFromCacheOrError();
     }
   }
