@@ -9,8 +9,7 @@ It collects notices, events, holidays, and curriculum information, and displays 
 ---
 
 <p align="center">
-  <a href="https://github.com/imtiyazallam07/SmartDesk/releases/download/v1.0.0/SmartDesk-v1.0.0.apk"><img src = "screenshots/Download_Android_APK_Badge.webp" width=200></a>
-  <a href="https://github.com/imtiyazallam07/SmartDesk/releases/download/v1.0.0/SmartDesk-installer.exe"><img src = "screenshots/download_windows.png" width=200></a>
+  <a href="https://github.com/imtiyazallam07/SmartDesk/releases/download/v1.5.2/SmartDesk-v1.5.2.apk"><img src = "screenshots/Download_Android_APK_Badge.webp" width=200></a>
 <p>
 
 ## ✨ Features  
